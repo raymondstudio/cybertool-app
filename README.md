@@ -1,36 +1,144 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CAMPUS SECURED
 
-## Getting Started
+**Cybersecurity Incident Triage Platform**
 
-First, run the development server:
+Transform messy incident reports into structured, actionable intelligence.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Project Overview
+
+CAMPUS SECURED is an AI-assisted incident triage platform designed for security teams that receive large volumes of poorly formatted reports. The system automatically classifies incidents, calculates severity, extracts technical indicators, redacts PII, detects duplicates, and routes incidents to the appropriate team.
+
+**Challenge**: D1 — Sorting Incident Reports Nobody Has Time to Read (Government & Public Sector Track)  
+**Hackathon Deadline**: September 18, 2026  
+**Status**: ACTIVE DEVELOPMENT (Phase 0–1)
+
+## Quick Start
+
+### Prerequisites
+- Node.js 18+ and npm 9+
+- Gemini API key (Google)
+- Supabase project
+
+### Setup
+
+1. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+2. **Configure environment**
+   ```bash
+   cp .env.example .env.local
+   # Edit .env.local with your API keys
+   ```
+
+3. **Run development server**
+   ```bash
+   npm run dev
+   ```
+
+4. **Open in browser**
+   ```
+   http://localhost:3000
+   ```
+
+## Project Structure
+
+```
+src/
+├── app/                            # Next.js App Router pages
+├── components/                     # Reusable React components
+├── lib/                            # Business logic & utilities
+├── types/                          # TypeScript types & Zod schemas
+└── config/                         # Configuration
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Development Phases
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+See [docs/PRD.md](./docs/PRD.md) for complete product specification.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+**Phase 0**: ✅ PRD  
+**Phase 1**: 🟡 Scaffolding (In Progress)  
+**Phase 2**: Core Analysis Engine  
+**Phase 3**: Persistence Layer  
+**Phases 4–8**: UI, Features, Evaluation  
 
-## Learn More
+## Key Technologies
 
-To learn more about Next.js, take a look at the following resources:
+- **Frontend**: Next.js 14+, React 19, TypeScript, Tailwind CSS
+- **Backend**: Next.js App Router
+- **Database**: Supabase (PostgreSQL)
+- **AI**: Google Generative AI (Gemini)
+- **Validation**: Zod
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Documentation
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **[Product Requirements (PRD)](./docs/PRD.md)** — Complete specification
+- **[Implementation Roadmap](./docs/PRD.md#development-phases)** — Phase details
 
-## Deploy on Vercel
+## Getting Started (Development)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+# Install dependencies
+npm install
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+# Create .env.local with your API keys
+cp .env.example .env.local
+
+# Run development server
+npm run dev
+```
+
+## Building & Deployment
+
+```bash
+# Development
+npm run dev
+
+# Production build
+npm run build
+
+# Production start
+npm start
+
+# Type check
+npm run type-check
+
+# Lint
+npm run lint
+```
+
+## Git Workflow
+
+- `main` — Production code
+- `develop` — Integration
+- `feature/*` — Feature branches
+
+Commits must be meaningful and focused. All work goes through PRs.
+
+## Team
+
+- **Technical Lead**: Architecture, analysis engine, backend
+- **Full-Stack Developer**: Frontend, UI, API integration
+- **PM/QA**: Product, dataset, testing
+
+## Security
+
+- Never commit secrets (use `.env.local`)
+- Validate all inputs with Zod
+- Sanitize displayed content
+- Use parameterized queries
+
+## Acceptance Criteria
+
+Project is submission-ready when:
+- ✅ Incident analysis pipeline works end-to-end
+- ✅ Classification accuracy > 75%, Severity accuracy > 70%
+- ✅ Incidents prioritized by risk (not chronological)
+- ✅ Dashboard shows real metrics
+- ✅ All code type-safe, APIs validated
+- ✅ Team can defend all design decisions
+
+---
+
+**Status**: Development in progress. PRD complete. Phase 1 scaffolding active.

@@ -1,69 +1,192 @@
-import Image from "next/image";
+import Link from "next/link";
 
-export default function Home() {
+export default function Dashboard() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b border-slate-200">
+        <div className="max-w-7xl mx-auto px-6 py-6">
+          <h1 className="text-4xl font-bold text-slate-900">
+            CAMPUS SECURED
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-slate-600 mt-1">
+            Incident Triage Platform — Transform chaos into clarity
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+      </header>
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-6 py-12">
+        {/* Hero Section */}
+        <div className="bg-white rounded-lg shadow-md p-12 mb-8 text-center">
+          <h2 className="text-3xl font-bold text-slate-900 mb-4">
+            Dashboard
+          </h2>
+          <p className="text-lg text-slate-600 mb-8">
+            Phase 1: Scaffolding in progress. Placeholders ready for Phase 2 implementation.
+          </p>
+          <div className="inline-block bg-blue-50 border-l-4 border-blue-500 px-6 py-4 rounded">
+            <p className="text-blue-900 font-semibold">
+              ✅ Foundation Complete
+            </p>
+            <p className="text-blue-800 text-sm mt-1">
+              Types, schemas, and API routes ready. Phase 2 begins with analysis engine.
+            </p>
+          </div>
+        </div>
+
+        {/* Quick Links */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+          <Link
+            href="/incidents"
+            className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg hover:bg-slate-50 transition"
           >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            <div className="text-red-600 text-3xl mb-3">📋</div>
+            <h3 className="text-lg font-semibold text-slate-900">Incidents</h3>
+            <p className="text-sm text-slate-600 mt-2">
+              View incident queue and details
+            </p>
+          </Link>
+
+          <Link
+            href="/clusters"
+            className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg hover:bg-slate-50 transition"
           >
-            Documentation
-          </a>
+            <div className="text-orange-600 text-3xl mb-3">🔗</div>
+            <h3 className="text-lg font-semibold text-slate-900">Clusters</h3>
+            <p className="text-sm text-slate-600 mt-2">
+              View correlated incident groups
+            </p>
+          </Link>
+
+          <Link
+            href="/evaluation"
+            className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg hover:bg-slate-50 transition"
+          >
+            <div className="text-green-600 text-3xl mb-3">📊</div>
+            <h3 className="text-lg font-semibold text-slate-900">Evaluation</h3>
+            <p className="text-sm text-slate-600 mt-2">
+              View system performance metrics
+            </p>
+          </Link>
+
+          <Link
+            href="#"
+            className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg hover:bg-slate-50 transition opacity-50 cursor-not-allowed"
+          >
+            <div className="text-blue-600 text-3xl mb-3">⚙️</div>
+            <h3 className="text-lg font-semibold text-slate-900">Settings</h3>
+            <p className="text-sm text-slate-600 mt-2">
+              (Coming soon)
+            </p>
+          </Link>
+
+          <Link
+            href="#"
+            className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg hover:bg-slate-50 transition opacity-50 cursor-not-allowed"
+          >
+            <div className="text-purple-600 text-3xl mb-3">👤</div>
+            <h3 className="text-lg font-semibold text-slate-900">Profile</h3>
+            <p className="text-sm text-slate-600 mt-2">
+              (Coming soon)
+            </p>
+          </Link>
+        </div>
+
+        {/* Status Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-12">
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <p className="text-slate-600 text-sm font-semibold">Total Reports</p>
+            <p className="text-4xl font-bold text-slate-900 mt-2">0</p>
+            <p className="text-slate-500 text-xs mt-1">Awaiting Phase 2</p>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <p className="text-red-600 text-sm font-semibold">🔴 Critical</p>
+            <p className="text-4xl font-bold text-red-600 mt-2">0</p>
+            <p className="text-slate-500 text-xs mt-1">Requires immediate action</p>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <p className="text-orange-600 text-sm font-semibold">🟠 High</p>
+            <p className="text-4xl font-bold text-orange-600 mt-2">0</p>
+            <p className="text-slate-500 text-xs mt-1">Awaiting investigation</p>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <p className="text-blue-600 text-sm font-semibold">Clusters</p>
+            <p className="text-4xl font-bold text-blue-600 mt-2">0</p>
+            <p className="text-slate-500 text-xs mt-1">Active correlation groups</p>
+          </div>
+        </div>
+
+        {/* Development Timeline */}
+        <div className="bg-white rounded-lg shadow-md p-8 mt-12">
+          <h3 className="text-2xl font-bold text-slate-900 mb-6">
+            Development Roadmap
+          </h3>
+          <div className="space-y-4">
+            <div className="flex items-start">
+              <span className="text-2xl mr-4">✅</span>
+              <div>
+                <p className="font-semibold text-slate-900">Phase 0–1: Foundation</p>
+                <p className="text-slate-600 text-sm">
+                  PRD complete. Types, errors, API route structure ready. Next.js scaffolded.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start">
+              <span className="text-2xl mr-4">⏳</span>
+              <div>
+                <p className="font-semibold text-slate-900">Phase 2: Analysis Engine</p>
+                <p className="text-slate-600 text-sm">
+                  Gemini classification, severity scoring, IOC extraction, PII detection, summarization,
+                  routing, recommendations.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start">
+              <span className="text-2xl mr-4">⏳</span>
+              <div>
+                <p className="font-semibold text-slate-900">Phase 3: Persistence</p>
+                <p className="text-slate-600 text-sm">
+                  Supabase integration. Store and retrieve incidents, analyses, indicators.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start">
+              <span className="text-2xl mr-4">⏳</span>
+              <div>
+                <p className="font-semibold text-slate-900">Phase 4–6: UI Pages</p>
+                <p className="text-slate-600 text-sm">
+                  Incident queue, detail page, clustering, dashboard metrics.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start">
+              <span className="text-2xl mr-4">⏳</span>
+              <div>
+                <p className="font-semibold text-slate-900">Phase 7–8: Evaluation</p>
+                <p className="text-slate-600 text-sm">
+                  Dataset generation, metric computation, honest evaluation reporting.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </main>
+
+      {/* Footer */}
+      <footer className="bg-white border-t border-slate-200 mt-16">
+        <div className="max-w-7xl mx-auto px-6 py-6 text-center text-slate-600 text-sm">
+          <p>CAMPUS SECURED Hackathon Challenge — Incident Triage Platform</p>
+          <p>Deadline: September 18, 2026</p>
+        </div>
+      </footer>
     </div>
   );
 }
