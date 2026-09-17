@@ -34,6 +34,8 @@ import {
   IncidentType,
   IncidentSeverity,
   IncidentStatus,
+  IncidentInputSource,
+  IncidentSource,
 } from '@/types/incident';
 import type { IncidentAnalysis } from '@/types/incident';
 import type { PipelineResult } from './types';
@@ -87,7 +89,19 @@ export const ANALYSIS_VERSION = '1.0.0';
  * Full incident analysis pipeline.
  * Returns a complete PipelineResult and persists the incident to the store.
  */
-export async function analyzeIncident(rawReport: string): Promise<PipelineResult> {
+export async function analyzeIncident(
+  rawReport: string,
+  options: {
+    persist?: boolean;
+    inputSource?: IncidentInputSource;
+    source?: IncidentSource;
+    affectedSystem?: string;
+    reporterCategory?: string;
+    incidentTime?: string;
+    department?: string;
+    evidence?: { name: string; type: string; size: number }[];
+  } = {}
+): Promise<PipelineResult> {
   const startTime = Date.now();
   const incidentId = incidentStore.generateId();
   const submittedAt = new Date();
@@ -181,6 +195,13 @@ export async function analyzeIncident(rawReport: string): Promise<PipelineResult
     createdAt: submittedAt,
     updatedAt: submittedAt,
     originalReport: rawReport,
+    inputSource: options.inputSource,
+    source: options.source,
+    affectedSystem: options.affectedSystem,
+    reporterCategory: options.reporterCategory,
+    incidentTime: options.incidentTime,
+    department: options.department,
+    evidence: options.evidence,
 
     incidentType: finalClassification.type,
     typeConfidence: finalClassification.confidence,
@@ -227,8 +248,9 @@ export async function analyzeIncident(rawReport: string): Promise<PipelineResult
     statusHistory: [{ status: IncidentStatus.NEW, timestamp: submittedAt }],
   };
 
-  // Persist to store
-  incidentStore.save(analysis, priorityScore);
+  if (options.persist !== false) {
+    incidentStore.save(analysis, priorityScore);
+  }
 
   return {
     context: {
@@ -236,6 +258,8 @@ export async function analyzeIncident(rawReport: string): Promise<PipelineResult
       submittedAt,
       analysisVersion: ANALYSIS_VERSION,
     },
+    analysis,
+    priorityScore,
     normalized,
     classification: finalClassification,
     severity: finalSeverity,

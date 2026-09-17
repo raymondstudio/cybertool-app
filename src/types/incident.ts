@@ -94,6 +94,24 @@ export enum IncidentStatus {
   FALSE_POSITIVE = 'FALSE_POSITIVE',
 }
 
+export enum IncidentSource {
+  EMAIL = 'EMAIL',
+  WHATSAPP = 'WHATSAPP',
+  PHONE = 'PHONE',
+  HELPDESK = 'HELPDESK',
+  SOC_ALERT = 'SOC_ALERT',
+  USER_REPORT = 'USER_REPORT',
+  SYSTEM_ALERT = 'SYSTEM_ALERT',
+  SCREENSHOT = 'SCREENSHOT',
+  OTHER = 'OTHER',
+}
+
+export enum IncidentInputSource {
+  TEXT = 'TEXT',
+  IMAGE = 'IMAGE',
+  TEXT_AND_IMAGE = 'TEXT_AND_IMAGE',
+}
+
 /**
  * ZOD SCHEMAS FOR VALIDATION
  */
@@ -155,6 +173,17 @@ export const IncidentAnalysisSchema = z.object({
 
   // Raw input
   originalReport: z.string().min(1).max(10000),
+  inputSource: z.nativeEnum(IncidentInputSource).optional(),
+  source: z.nativeEnum(IncidentSource).optional(),
+  affectedSystem: z.string().max(200).optional(),
+  reporterCategory: z.string().max(120).optional(),
+  incidentTime: z.string().max(80).optional(),
+  department: z.string().max(120).optional(),
+  evidence: z.array(z.object({
+    name: z.string().min(1).max(200),
+    type: z.string().min(1).max(100),
+    size: z.number().int().nonnegative().max(10_000_000),
+  })).max(3).optional(),
 
   // Classification
   incidentType: z.nativeEnum(IncidentType),
@@ -198,7 +227,12 @@ export type IncidentAnalysis = z.infer<typeof IncidentAnalysisSchema>;
 
 // Incident Submission Request
 export const IncidentSubmissionSchema = z.object({
-  report: z.string().min(1).max(10000),
+  report: z.string().max(10000).optional(),
+  source: z.nativeEnum(IncidentSource).optional(),
+  affectedSystem: z.string().max(200).optional(),
+  reporterCategory: z.string().max(120).optional(),
+  incidentTime: z.string().max(80).optional(),
+  department: z.string().max(120).optional(),
 });
 
 export type IncidentSubmission = z.infer<typeof IncidentSubmissionSchema>;

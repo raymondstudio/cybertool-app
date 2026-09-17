@@ -24,6 +24,11 @@ export interface AiClassificationResult {
   usedFallback: boolean;
 }
 
+export interface ImageAnalysisResult {
+  extractedText: string;
+  evidence: string[];
+}
+
 function getApiKey(): string | null {
   return process.env.GEMINI_API_KEY ?? process.env.GOOGLE_GENERATIVE_AI_API_KEY ?? null;
 }
@@ -86,6 +91,49 @@ async function callGemini(prompt: string, maxTokens = 512): Promise<string | nul
   } catch (err) {
     console.error('[AI] Gemini call failed:', err instanceof Error ? err.message : 'Unknown error');
     return null;
+  }
+}
+
+export async function analyzeImageEvidence(
+  image: { data: string; mimeType: string }
+): Promise<ImageAnalysisResult> {
+  const genAI = getClient();
+  if (!genAI) {
+    throw new Error('Image analysis requires GEMINI_API_KEY.');
+  }
+
+  const result = await Promise.race([
+    genAI.models.generateContent({
+      model: DEFAULT_MODEL,
+      contents: [
+        {
+          text: 'Extract only information visible in this cybersecurity incident screenshot. Return JSON with extractedText as a faithful transcription of relevant visible text and evidence as concise security-relevant observations. Do not invent or infer details that are not visible.',
+        },
+        { inlineData: image },
+      ],
+      config: {
+        maxOutputTokens: 1200,
+        responseMimeType: 'application/json',
+      },
+    }),
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Image analysis timed out')), 12000)
+    ),
+  ]);
+
+  const text = typeof result.text === 'string' ? result.text.trim() : '';
+  if (!text) throw new Error('The screenshot did not produce readable analysis.');
+
+  try {
+    const parsed = JSON.parse(text) as { extractedText?: unknown; evidence?: unknown };
+    return {
+      extractedText: typeof parsed.extractedText === 'string' ? parsed.extractedText.trim() : '',
+      evidence: Array.isArray(parsed.evidence)
+        ? parsed.evidence.filter((item): item is string => typeof item === 'string').slice(0, 8)
+        : [],
+    };
+  } catch {
+    throw new Error('The screenshot analysis returned an invalid result.');
   }
 }
 

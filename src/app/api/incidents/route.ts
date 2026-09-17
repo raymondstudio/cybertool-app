@@ -2,7 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { incidentStore } from '@/lib/data/store';
 import { AppError, ErrorCode, createErrorResponse, logError } from '@/lib/errors';
-import { IncidentSeverity, IncidentType, IncidentStatus } from '@/types/incident';
+import {
+  IncidentAnalysisSchema,
+  IncidentSeverity,
+  IncidentType,
+  IncidentStatus,
+  StatusHistorySchema,
+} from '@/types/incident';
 
 // ─── Query parameter validation ───────────────────────────────────────────────
 
@@ -15,6 +21,31 @@ const ListQuerySchema = z.object({
   search: z.string().max(200).optional(),
 });
 
+const SaveSchema = z.object({
+  incident: IncidentAnalysisSchema.extend({
+    createdAt: z.coerce.date(),
+    updatedAt: z.coerce.date(),
+    statusHistory: z.array(StatusHistorySchema.extend({ timestamp: z.coerce.date() })),
+  }),
+  priorityScore: z.number().int().min(0).max(100),
+});
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const parsed = SaveSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new AppError(ErrorCode.VALIDATION_ERROR, 400, 'The analyzed incident could not be saved.');
+    }
+
+    incidentStore.save(parsed.data.incident, parsed.data.priorityScore);
+    return NextResponse.json({ incident: parsed.data.incident }, { status: 201 });
+  } catch (error) {
+    logError(error, 'POST /api/incidents');
+    const { statusCode, body } = createErrorResponse(error);
+    return NextResponse.json(body, { status: statusCode });
+  }
+}
 /**
  * GET /api/incidents
  * Returns a paginated, filtered, priority-sorted list of incidents.

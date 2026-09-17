@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { incidentStore } from '@/lib/data/store';
+import StatusControls from './status-controls';
 
 export default async function IncidentDetailPage({
   params,
@@ -56,10 +57,8 @@ export default async function IncidentDetailPage({
 
           <div className="space-y-6">
             <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
-              <h2 className="text-xl font-semibold text-white">Analyst notes</h2>
-              <p className="mt-4 text-sm leading-6 text-slate-300">
-                {incident.notes ?? 'No analyst notes recorded yet.'}
-              </p>
+              <h2 className="text-xl font-semibold text-white">Workflow</h2>
+              <div className="mt-4"><StatusControls incidentId={incident.incidentId} initialStatus={incident.status} initialNotes={incident.notes} /></div>
             </div>
             <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
               <h2 className="text-xl font-semibold text-white">Recommended action</h2>
@@ -88,6 +87,15 @@ export default async function IncidentDetailPage({
           <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
             <h2 className="text-xl font-semibold text-white">Sanitized report</h2>
             <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-slate-300">{incident.sanitizedReport}</p>
+          </div>
+
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
+            <h2 className="text-xl font-semibold text-white">Status history</h2>
+            <ol className="mt-5 space-y-3 border-l border-slate-700 pl-4 text-sm text-slate-300">
+              {incident.statusHistory.map((entry, index) => (
+                <li key={`${entry.status}-${index}`}><p className="font-medium text-white">{entry.status.replace(/_/g, ' ')}</p><p className="mt-1 text-xs text-slate-500">{new Date(entry.timestamp).toLocaleString()}</p></li>
+              ))}
+            </ol>
           </div>
         </section>
       </main>

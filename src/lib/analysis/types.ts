@@ -10,6 +10,7 @@ import {
   RoutingDestination,
   IndicatorType,
   PiiType,
+  IncidentAnalysis,
 } from '@/types/incident';
 
 export type { IncidentType, IncidentSeverity, IncidentStatus, RoutingDestination, IndicatorType, PiiType };
@@ -110,4 +111,6 @@ export interface PipelineResult {
   clusterAssignment: ClusterAssignment;
   processingDurationMs: number;
   usedFallback: boolean;
+  analysis: IncidentAnalysis;
+  priorityScore: number;
 }

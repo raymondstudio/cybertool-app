@@ -21,7 +21,7 @@ export default function IncidentsPage() {
           </div>
 
           {result.incidents.length === 0 ? (
-            <div className="p-10 text-center text-slate-400">No incidents are currently queued.</div>
+            <div className="p-10 text-center"><p className="text-slate-200">No incidents in the queue</p><p className="mt-2 text-sm text-slate-400">Analyze a report or upload a screenshot to create the first incident record.</p><Link href="/incidents/new" className="mt-5 inline-flex bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-300">Analyze new incident</Link></div>
           ) : (
             <div className="divide-y divide-slate-800">
               {result.incidents.map((incident) => (

@@ -2,119 +2,126 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { AppError, ErrorCode, createErrorResponse, logError } from '@/lib/errors';
 import { analyzeIncident } from '@/lib/analysis/pipeline';
+import { analyzeImageEvidence } from '@/lib/ai/provider';
+import { IncidentInputSource, IncidentSource } from '@/types/incident';
 
-// ─── Request validation ───────────────────────────────────────────────────────
+const MAX_REPORT_LENGTH = 10_000;
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+const MAX_IMAGES = 3;
+const IMAGE_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp']);
+const IMAGE_EXTENSIONS = /\.(png|jpe?g|webp)$/i;
 
-const AnalyzeRequestSchema = z.object({
-  report: z
-    .string()
-    .min(10, 'Report must be at least 10 characters')
-    .max(10000, 'Report must not exceed 10,000 characters')
-    .refine(
-      (s) => s.trim().length >= 10,
-      'Report cannot be whitespace only'
-    ),
+const MetadataSchema = z.object({
+  source: z.nativeEnum(IncidentSource).optional(),
+  affectedSystem: z.string().max(200).optional(),
+  reporterCategory: z.string().max(120).optional(),
+  incidentTime: z.string().max(80).optional(),
+  department: z.string().max(120).optional(),
 });
 
-// ─── Handler ──────────────────────────────────────────────────────────────────
+function hasValidSignature(bytes: Uint8Array, mimeType: string): boolean {
+  if (mimeType === 'image/png') {
+    const signature = [137, 80, 78, 71, 13, 10, 26, 10];
+    return bytes.length >= signature.length && signature.every((value, index) => bytes[index] === value);
+  }
+  if (mimeType === 'image/jpeg') {
+    return bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
+  }
+  if (mimeType === 'image/webp') {
+    return bytes.length >= 12 && String.fromCharCode(...bytes.slice(0, 4)) === 'RIFF' && String.fromCharCode(...bytes.slice(8, 12)) === 'WEBP';
+  }
+  return false;
+}
 
-/**
- * POST /api/incidents/analyze
- *
- * Submit a raw incident report for full analysis.
- *
- * Request body: { "report": "raw text" }
- * Response 200: { "incident": IncidentAnalysis }
- * Response 400: { "error": "...", "code": "..." }
- * Response 500: { "error": "...", "code": "..." }
- */
+function getTextField(form: FormData, key: string): string | undefined {
+  const value = form.get(key);
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+}
+
 export async function POST(request: NextRequest) {
   try {
-    // Size guard before JSON parsing (NextRequest doesn't expose body size directly)
     const contentLength = request.headers.get('content-length');
-    if (contentLength && parseInt(contentLength) > 100_000) {
-      throw new AppError(ErrorCode.INVALID_INPUT, 413, 'Request body too large');
+    if (contentLength && Number.parseInt(contentLength, 10) > 20 * 1024 * 1024) {
+      throw new AppError(ErrorCode.INVALID_INPUT, 413, 'The submission is too large.');
     }
 
-    // Parse body
-    let body: unknown;
-    try {
-      body = await request.json();
-    } catch {
-      throw new AppError(
-        ErrorCode.INVALID_INPUT,
-        400,
-        'Request body must be valid JSON'
-      );
+    const form = await request.formData();
+    const report = getTextField(form, 'report') ?? '';
+    const metadataResult = MetadataSchema.safeParse({
+      source: getTextField(form, 'source'),
+      affectedSystem: getTextField(form, 'affectedSystem'),
+      reporterCategory: getTextField(form, 'reporterCategory'),
+      incidentTime: getTextField(form, 'incidentTime'),
+      department: getTextField(form, 'department'),
+    });
+
+    if (!metadataResult.success) {
+      throw new AppError(ErrorCode.VALIDATION_ERROR, 400, 'One or more incident details are invalid.');
+    }
+    if (report.length > MAX_REPORT_LENGTH) {
+      throw new AppError(ErrorCode.VALIDATION_ERROR, 400, 'The incident report must be 10,000 characters or fewer.');
     }
 
-    // Validate with Zod
-    const parseResult = AnalyzeRequestSchema.safeParse(body);
-    if (!parseResult.success) {
-      const messages = parseResult.error.issues.map((i) => i.message).join('; ');
-      throw new AppError(ErrorCode.VALIDATION_ERROR, 400, messages);
+    const images = form.getAll('evidence').filter((value): value is File => value instanceof File && value.size > 0);
+    if (images.length > MAX_IMAGES) {
+      throw new AppError(ErrorCode.VALIDATION_ERROR, 400, 'Upload no more than three screenshots.');
     }
 
-    const { report } = parseResult.data;
+    const imageResults: { name: string; type: string; size: number; extractedText: string; evidence: string[] }[] = [];
+    for (const image of images) {
+      if (!IMAGE_TYPES.has(image.type) || !IMAGE_EXTENSIONS.test(image.name)) {
+        throw new AppError(ErrorCode.VALIDATION_ERROR, 400, 'Screenshots must be PNG, JPG, JPEG, or WEBP files.');
+      }
+      if (image.size > MAX_IMAGE_BYTES) {
+        throw new AppError(ErrorCode.VALIDATION_ERROR, 400, 'Each screenshot must be 5 MB or smaller.');
+      }
 
-    // Run analysis pipeline
-    const pipelineResult = await analyzeIncident(report);
+      const bytes = new Uint8Array(await image.arrayBuffer());
+      if (!hasValidSignature(bytes, image.type)) {
+        throw new AppError(ErrorCode.VALIDATION_ERROR, 400, 'One of the uploaded screenshots is not a valid image file.');
+      }
 
-    // Retrieve the persisted incident (pipeline already saved it)
-    const incident = {
-      incidentId: pipelineResult.context.incidentId,
-      createdAt: pipelineResult.context.submittedAt,
-      updatedAt: pipelineResult.context.submittedAt,
-      originalReport: report,
-      incidentType: pipelineResult.classification.type,
-      typeConfidence: pipelineResult.classification.confidence,
-      severity: pipelineResult.severity.severity,
-      severityScore: pipelineResult.severity.score,
-      severityReasons: pipelineResult.severity.reasons,
-      summary: pipelineResult.summary,
-      technicalIndicators: pipelineResult.indicators.map((ind) => ({
-        type: ind.type,
-        value: ind.value,
-        context: ind.context,
-        confidence: ind.confidence,
-        isMalicious: ind.isMalicious,
-      })),
-      piiDetections: pipelineResult.sanitization.piiMatches
-        .filter((p) => !p.isTechnicalIndicator)
-        .map((p) => ({
-          type: p.type,
-          context: p.context,
-          confidence: p.confidence,
-          redactedAs: p.redactedAs,
-        })),
-      sanitizedReport: pipelineResult.sanitization.sanitizedReport,
-      relatedIncidents: pipelineResult.relatedIncidents.map((r) => ({
-        incidentId: r.incidentId,
-        similarity: r.similarity,
-        reason: r.reason,
-      })),
-      clusterId: pipelineResult.clusterAssignment.clusterId ?? undefined,
-      recommendedRoute: pipelineResult.routing.destination,
-      routingReasoning: pipelineResult.routing.reasoning,
-      recommendedAction: pipelineResult.recommendedAction,
-      status: 'NEW' as const,
-      statusHistory: [
-        {
-          status: 'NEW' as const,
-          timestamp: pipelineResult.context.submittedAt,
-        },
-      ],
-      processingDurationMs: pipelineResult.processingDurationMs,
-      usedFallback: pipelineResult.usedFallback,
-    };
+      const result = await analyzeImageEvidence({
+        data: Buffer.from(bytes).toString('base64'),
+        mimeType: image.type,
+      });
+      imageResults.push({ name: image.name, type: image.type, size: image.size, ...result });
+    }
 
-    return NextResponse.json({ incident }, { status: 200 });
+    const imageText = imageResults.map((image) => [
+      `[Screenshot evidence: ${image.name}]`,
+      image.extractedText ? `Visible text:\n${image.extractedText}` : '',
+      image.evidence.length ? `Visible security evidence:\n${image.evidence.map((item) => `- ${item}`).join('\n')}` : '',
+    ].filter(Boolean).join('\n')).join('\n\n');
+
+    const combinedReport = [
+      report ? `[Analyst report]\n${report}` : '',
+      imageText,
+    ].filter(Boolean).join('\n\n');
+
+    if (combinedReport.trim().length < 10) {
+      throw new AppError(ErrorCode.VALIDATION_ERROR, 400, 'Add an incident report or upload a screenshot before analyzing.');
+    }
+
+    const inputSource = imageResults.length
+      ? report ? IncidentInputSource.TEXT_AND_IMAGE : IncidentInputSource.IMAGE
+      : IncidentInputSource.TEXT;
+
+    const result = await analyzeIncident(combinedReport, {
+      persist: false,
+      inputSource,
+      ...metadataResult.data,
+      source: metadataResult.data.source ?? (imageResults.length ? IncidentSource.SCREENSHOT : undefined),
+      evidence: imageResults.map(({ name, type, size }) => ({ name, type, size })),
+    });
+
+    return NextResponse.json({
+      incident: result.analysis,
+      priorityScore: result.priorityScore,
+      imageAnalysis: imageResults.map(({ name, extractedText, evidence }) => ({ name, extractedText, evidence })),
+    });
   } catch (error) {
-    // Never log the report content
-    logError(
-      error instanceof AppError ? error.toJSON() : error,
-      'POST /api/incidents/analyze'
-    );
+    logError(error instanceof AppError ? error.toJSON() : error, 'POST /api/incidents/analyze');
     const { statusCode, body } = createErrorResponse(error);
     return NextResponse.json(body, { status: statusCode });
   }

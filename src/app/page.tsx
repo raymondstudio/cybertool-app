@@ -13,9 +13,10 @@ export default function DashboardPage() {
             <p className="text-xs uppercase tracking-[0.28em] text-cyan-300">Sentria</p>
             <h1 className="mt-2 text-2xl font-semibold text-white">Threat Operations Dashboard</h1>
           </div>
-          <Link href="/incidents" className="rounded-full border border-cyan-500/50 bg-cyan-500/10 px-4 py-2 text-sm font-medium text-cyan-200 hover:bg-cyan-500/20">
-            View incident queue
-          </Link>
+          <div className="flex gap-3">
+            <Link href="/incidents/new" className="rounded-md bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-300">New incident</Link>
+            <Link href="/incidents" className="rounded-md border border-slate-700 px-4 py-2 text-sm font-medium text-slate-200 hover:border-cyan-400">View queue</Link>
+          </div>
         </div>
       </header>
 
@@ -24,7 +25,7 @@ export default function DashboardPage() {
           <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
             <p className="text-sm text-slate-400">Total reports</p>
             <p className="mt-3 text-4xl font-bold text-white">{metrics.total}</p>
-            <p className="mt-2 text-xs text-slate-400">Currently in the live incident store</p>
+            <p className="mt-2 text-xs text-slate-400">Analyzed reports in this session</p>
           </div>
 
           <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-5">
@@ -55,7 +56,9 @@ export default function DashboardPage() {
 
             {recentIncidents.length === 0 ? (
               <div className="rounded-xl border border-dashed border-slate-700 bg-slate-950/40 p-8 text-center text-slate-400">
-                No incidents yet. Submit a report through the analysis API to populate the queue.
+                <p>No incidents have been submitted yet.</p>
+                <p className="mt-2 text-sm">Start by analyzing a report, message, or screenshot.</p>
+                <Link href="/incidents/new" className="mt-5 inline-flex bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-300">Analyze your first incident</Link>
               </div>
             ) : (
               <div className="space-y-3">
