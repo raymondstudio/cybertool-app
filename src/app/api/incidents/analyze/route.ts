@@ -1,46 +1,46 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { IncidentSubmissionSchema, IncidentAnalysisSchema } from '@/types/incident';
+import { z } from 'zod';
 import { AppError, ErrorCode, createErrorResponse, logError } from '@/lib/errors';
+import { analyzeIncident } from '@/lib/analysis/pipeline';
+
+// ─── Request validation ───────────────────────────────────────────────────────
+
+const AnalyzeRequestSchema = z.object({
+  report: z
+    .string()
+    .min(10, 'Report must be at least 10 characters')
+    .max(10000, 'Report must not exceed 10,000 characters')
+    .refine(
+      (s) => s.trim().length >= 10,
+      'Report cannot be whitespace only'
+    ),
+});
+
+// ─── Handler ──────────────────────────────────────────────────────────────────
 
 /**
  * POST /api/incidents/analyze
- * 
- * Submit a raw incident report for AI-assisted analysis.
- * 
- * Request:
- * {
- *   "report": "raw incident report text"
- * }
- * 
- * Response (200):
- * {
- *   "incident": {
- *     "incidentId": "INC-0001",
- *     "incidentType": "PHISHING",
- *     "typeConfidence": 0.94,
- *     "severity": "HIGH",
- *     "severityScore": 68,
- *     ...
- *   }
- * }
- * 
- * Response (400):
- * {
- *   "error": "Report cannot be empty"
- * }
- * 
- * Response (500):
- * {
- *   "error": "Analysis service unavailable. Please try again."
- * }
+ *
+ * Submit a raw incident report for full analysis.
+ *
+ * Request body: { "report": "raw text" }
+ * Response 200: { "incident": IncidentAnalysis }
+ * Response 400: { "error": "...", "code": "..." }
+ * Response 500: { "error": "...", "code": "..." }
  */
 export async function POST(request: NextRequest) {
   try {
-    // Parse request body
-    let body;
+    // Size guard before JSON parsing (NextRequest doesn't expose body size directly)
+    const contentLength = request.headers.get('content-length');
+    if (contentLength && parseInt(contentLength) > 100_000) {
+      throw new AppError(ErrorCode.INVALID_INPUT, 413, 'Request body too large');
+    }
+
+    // Parse body
+    let body: unknown;
     try {
       body = await request.json();
-    } catch (error) {
+    } catch {
       throw new AppError(
         ErrorCode.INVALID_INPUT,
         400,
@@ -48,76 +48,73 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate request with Zod schema
-    const validationResult = IncidentSubmissionSchema.safeParse(body);
-    if (!validationResult.success) {
-      const errors = validationResult.error.issues.map((e) => ({
-        field: e.path.join('.'),
-        message: e.message,
-      }));
-
-      throw new AppError(ErrorCode.VALIDATION_ERROR, 400, 'Validation failed', { errors });
+    // Validate with Zod
+    const parseResult = AnalyzeRequestSchema.safeParse(body);
+    if (!parseResult.success) {
+      const messages = parseResult.error.issues.map((i) => i.message).join('; ');
+      throw new AppError(ErrorCode.VALIDATION_ERROR, 400, messages);
     }
 
-    const { report } = validationResult.data;
+    const { report } = parseResult.data;
 
-    // TODO: PHASE 2 — Implement core analysis pipeline
-    // 1. Call classification service
-    // 2. Call severity calculator
-    // 3. Call IOC extractor
-    // 4. Call PII detector
-    // 5. Call summarizer
-    // 6. Call router
-    // 7. Call action recommender
-    // For now, return mock response to verify structure
+    // Run analysis pipeline
+    const pipelineResult = await analyzeIncident(report);
 
-    const mockAnalysis = {
-      incidentId: `INC-${Date.now()}`,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+    // Retrieve the persisted incident (pipeline already saved it)
+    const incident = {
+      incidentId: pipelineResult.context.incidentId,
+      createdAt: pipelineResult.context.submittedAt,
+      updatedAt: pipelineResult.context.submittedAt,
       originalReport: report,
-      incidentType: 'OTHER',
-      typeConfidence: 0.5,
-      severity: 'MEDIUM',
-      severityScore: 40,
-      severityReasons: ['Unable to classify report'],
-      summary: 'Report awaiting analysis.',
-      technicalIndicators: [],
-      piiDetections: [],
-      sanitizedReport: report,
-      relatedIncidents: [],
-      clusterId: undefined,
-      recommendedRoute: 'SOC',
-      routingReasoning: ['Low confidence; forwarding to SOC for manual review'],
-      recommendedAction: 'Manual review and classification required.',
-      status: 'NEW',
+      incidentType: pipelineResult.classification.type,
+      typeConfidence: pipelineResult.classification.confidence,
+      severity: pipelineResult.severity.severity,
+      severityScore: pipelineResult.severity.score,
+      severityReasons: pipelineResult.severity.reasons,
+      summary: pipelineResult.summary,
+      technicalIndicators: pipelineResult.indicators.map((ind) => ({
+        type: ind.type,
+        value: ind.value,
+        context: ind.context,
+        confidence: ind.confidence,
+        isMalicious: ind.isMalicious,
+      })),
+      piiDetections: pipelineResult.sanitization.piiMatches
+        .filter((p) => !p.isTechnicalIndicator)
+        .map((p) => ({
+          type: p.type,
+          context: p.context,
+          confidence: p.confidence,
+          redactedAs: p.redactedAs,
+        })),
+      sanitizedReport: pipelineResult.sanitization.sanitizedReport,
+      relatedIncidents: pipelineResult.relatedIncidents.map((r) => ({
+        incidentId: r.incidentId,
+        similarity: r.similarity,
+        reason: r.reason,
+      })),
+      clusterId: pipelineResult.clusterAssignment.clusterId ?? undefined,
+      recommendedRoute: pipelineResult.routing.destination,
+      routingReasoning: pipelineResult.routing.reasoning,
+      recommendedAction: pipelineResult.recommendedAction,
+      status: 'NEW' as const,
       statusHistory: [
         {
-          status: 'NEW',
-          timestamp: new Date(),
+          status: 'NEW' as const,
+          timestamp: pipelineResult.context.submittedAt,
         },
       ],
-      notes: undefined,
+      processingDurationMs: pipelineResult.processingDurationMs,
+      usedFallback: pipelineResult.usedFallback,
     };
 
-    // Validate response structure
-    const responseValidation = IncidentAnalysisSchema.safeParse(mockAnalysis);
-    if (!responseValidation.success) {
-      logError('Analysis response validation failed', 'POST /api/incidents/analyze');
-      throw new AppError(
-        ErrorCode.ANALYSIS_FAILED,
-        500,
-        'Failed to generate valid analysis response',
-        { errors: responseValidation.error.issues }
-      );
-    }
-
-    return NextResponse.json(
-      { incident: responseValidation.data },
-      { status: 200 }
-    );
+    return NextResponse.json({ incident }, { status: 200 });
   } catch (error) {
-    logError(error, 'POST /api/incidents/analyze');
+    // Never log the report content
+    logError(
+      error instanceof AppError ? error.toJSON() : error,
+      'POST /api/incidents/analyze'
+    );
     const { statusCode, body } = createErrorResponse(error);
     return NextResponse.json(body, { status: statusCode });
   }

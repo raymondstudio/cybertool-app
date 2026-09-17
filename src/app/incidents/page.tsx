@@ -1,58 +1,53 @@
-"use client";
+import Link from 'next/link';
+import { incidentStore } from '@/lib/data/store';
 
 export default function IncidentsPage() {
+  const result = incidentStore.list({ page: 1, limit: 10 });
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-6 py-6">
-          <h1 className="text-3xl font-bold text-slate-900">Incidents</h1>
-          <p className="text-slate-600 mt-1">Queue and management</p>
+    <div className="min-h-screen bg-slate-950 text-slate-100">
+      <header className="border-b border-slate-800 bg-slate-950/80">
+        <div className="mx-auto max-w-7xl px-6 py-6">
+          <p className="text-xs uppercase tracking-[0.24em] text-cyan-300">Operations</p>
+          <h1 className="mt-2 text-3xl font-semibold text-white">Incident queue</h1>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-6 py-12">
-        <div className="bg-white rounded-lg shadow-md p-8">
-          <h2 className="text-2xl font-bold text-slate-900 mb-6">
-            Incident Queue
-          </h2>
-
-          {/* Placeholder Table */}
-          <div className="bg-slate-50 border border-slate-200 rounded p-8 text-center">
-            <p className="text-slate-600 text-lg mb-2">
-              📋 Placeholder — Phase 3 (Persistence) Implementation
-            </p>
-            <p className="text-slate-500 text-sm">
-              When Phase 3 is complete, this page will display a prioritized queue of
-              incidents with filtering, search, and pagination.
-            </p>
+      <main className="mx-auto max-w-7xl px-6 py-10">
+        <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900">
+          <div className="flex items-center justify-between border-b border-slate-800 px-5 py-4">
+            <h2 className="text-xl font-semibold text-white">Priority queue</h2>
+            <span className="text-sm text-slate-400">{result.total} total</span>
           </div>
 
-          {/* Features Description */}
-          <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-blue-50 border border-blue-200 rounded p-6">
-              <h3 className="font-semibold text-blue-900 mb-2">Features (Coming)</h3>
-              <ul className="text-sm text-blue-800 space-y-1">
-                <li>✓ Priority queue (CRITICAL first)</li>
-                <li>✓ Filter by severity, type, status</li>
-                <li>✓ Search by IOC or text</li>
-                <li>✓ Pagination and sorting</li>
-                <li>✓ Click to view detail page</li>
-              </ul>
+          {result.incidents.length === 0 ? (
+            <div className="p-10 text-center text-slate-400">No incidents are currently queued.</div>
+          ) : (
+            <div className="divide-y divide-slate-800">
+              {result.incidents.map((incident) => (
+                <Link key={incident.incidentId} href={`/incidents/${incident.incidentId}`} className="block p-5 transition hover:bg-slate-950/40">
+                  <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                    <div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs uppercase tracking-[0.2em] text-slate-400">{incident.incidentId}</span>
+                        <span className="rounded-full border border-slate-700 px-2 py-1 text-[10px] font-medium uppercase text-slate-200">
+                          {incident.status}
+                        </span>
+                      </div>
+                      <h3 className="mt-2 text-lg font-semibold text-white">{incident.incidentType.replace(/_/g, ' ')}</h3>
+                      <p className="mt-1 text-sm text-slate-300">{incident.summary}</p>
+                    </div>
+                    <div className="flex items-center gap-3 md:flex-col md:items-end">
+                      <span className="rounded-full border border-red-500/40 bg-red-500/10 px-2.5 py-1 text-xs font-medium text-red-200">
+                        {incident.severity}
+                      </span>
+                      <span className="text-xs text-slate-400">{incident.technicalIndicators.length} indicators</span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
             </div>
-
-            <div className="bg-green-50 border border-green-200 rounded p-6">
-              <h3 className="font-semibold text-green-900 mb-2">Status</h3>
-              <ul className="text-sm text-green-800 space-y-1">
-                <li>✅ Types & schemas defined</li>
-                <li>✅ API route ready</li>
-                <li>⏳ Phase 2: Analysis engine</li>
-                <li>⏳ Phase 3: Database storage</li>
-                <li>⏳ Phase 4: UI implementation</li>
-              </ul>
-            </div>
-          </div>
+          )}
         </div>
       </main>
     </div>
