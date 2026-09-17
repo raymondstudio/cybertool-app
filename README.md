@@ -1,4 +1,4 @@
-# CAMPUS SECURED
+# Sentria
 
 **Cybersecurity Incident Triage Platform**
 
@@ -6,7 +6,7 @@ Transform messy incident reports into structured, actionable intelligence.
 
 ## Project Overview
 
-CAMPUS SECURED is an AI-assisted incident triage platform designed for security teams that receive large volumes of poorly formatted reports. The system automatically classifies incidents, calculates severity, extracts technical indicators, redacts PII, detects duplicates, and routes incidents to the appropriate team.
+Sentria is an AI-assisted incident triage platform designed for security teams that receive large volumes of poorly formatted reports. The system automatically classifies incidents, calculates severity, extracts technical indicators, redacts PII, detects duplicates, and routes incidents to the appropriate team.
 
 **Challenge**: D1 — Sorting Incident Reports Nobody Has Time to Read (Government & Public Sector Track)  
 **Hackathon Deadline**: September 18, 2026  

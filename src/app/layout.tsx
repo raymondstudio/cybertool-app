@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CAMPUS SECURED — Incident Triage Platform",
+  title: "Sentria — Incident Triage Platform",
   description: "Transform messy incident reports into actionable intelligence",
 };
 

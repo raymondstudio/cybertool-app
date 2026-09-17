@@ -10,7 +10,7 @@ export default function DashboardPage() {
       <header className="border-b border-slate-800 bg-slate-950/80 backdrop-blur-sm">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
           <div>
-            <p className="text-xs uppercase tracking-[0.28em] text-cyan-300">Campus Secured</p>
+            <p className="text-xs uppercase tracking-[0.28em] text-cyan-300">Sentria</p>
             <h1 className="mt-2 text-2xl font-semibold text-white">Threat Operations Dashboard</h1>
           </div>
           <Link href="/incidents" className="rounded-full border border-cyan-500/50 bg-cyan-500/10 px-4 py-2 text-sm font-medium text-cyan-200 hover:bg-cyan-500/20">

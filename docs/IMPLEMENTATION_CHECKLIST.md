@@ -1,4 +1,4 @@
-# CAMPUS SECURED — Implementation Checklist
+# Sentria — Implementation Checklist
 
 **Project Status**: Phase 0–1 (PRD + Scaffolding)  
 **Deadline**: September 18, 2026 (11 days)  

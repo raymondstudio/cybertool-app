@@ -1,4 +1,4 @@
-# CAMPUS SECURED Implementation — Status Report (Sept 7, 2026)
+# Sentria Implementation — Status Report (Sept 7, 2026)
 
 **Project Deadline**: September 18, 2026 (11 days remaining)  
 **Current Phase**: Phase 1 (Project Scaffolding) — 95% complete  
@@ -376,5 +376,5 @@ Once npm finishes:
 ---
 
 **Last Updated**: September 7, 2026, ~5:00 PM  
-**Prepared for**: CAMPUS SECURED Hackathon Challenge  
+**Prepared for**: Sentria Hackathon Challenge  
 **Status**: Ready for Phase 2

@@ -1,6 +1,6 @@
-# CAMPUS SECURED — Product Requirements Document (PRD)
+# Sentria — Product Requirements Document (PRD)
 
-**Project**: CAMPUS SECURED  
+**Project**: Sentria  
 **Challenge**: D1 — Sorting Incident Reports Nobody Has Time to Read  
 **Track**: Government & Public Sector  
 **Submission Deadline**: September 18, 2026  
@@ -11,7 +11,7 @@
 
 ## Executive Summary
 
-CAMPUS SECURED is an AI-assisted cybersecurity incident triage platform that transforms messy, unstructured incident reports into structured, prioritized, analyst-ready intelligence.
+Sentria is an AI-assisted cybersecurity incident triage platform that transforms messy, unstructured incident reports into structured, prioritized, analyst-ready intelligence.
 
 **Problem**: Security analysts and CERT teams receive large volumes of poorly written incident reports (typos, grammar issues, mixed languages, PII, duplicate submissions, unclear severity). Manual reading and interpretation wastes time and introduces inconsistency.
 
@@ -48,7 +48,7 @@ CAMPUS SECURED is an AI-assisted cybersecurity incident triage platform that tra
 
 ## Product Vision
 
-CAMPUS SECURED delivers **incident intelligence, not just incident logging**.
+Sentria delivers **incident intelligence, not just incident logging**.
 
 Analysts interact with the platform to:
 1. **Submit** a raw incident report (text)
@@ -1504,7 +1504,7 @@ A feature is "done" when:
 
 ## Project Completion Criteria
 
-CAMPUS SECURED is **ready for submission** when:
+Sentria is **ready for submission** when:
 
 - ✅ A messy incident report can be submitted
 - ✅ System classifies it correctly (confidence > 70%)
@@ -1585,4 +1585,4 @@ See [IMPLEMENTATION_ROADMAP.md](#) for detailed phase breakdown and timeline.
 
 ---
 
-**This PRD is the authoritative source of truth for CAMPUS SECURED development. All architecture, design, and implementation decisions must align with this document.**
+**This PRD is the authoritative source of truth for Sentria development. All architecture, design, and implementation decisions must align with this document.**
