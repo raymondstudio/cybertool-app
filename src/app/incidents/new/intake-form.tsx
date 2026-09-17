@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { FormEvent, useEffect, useState } from 'react';
-import type { IncidentAnalysis, IncidentSource } from '@/types/incident';
+import Image from 'next/image';
+import { FormEvent, useEffect, useRef, useState } from 'react';
+import type { IncidentAnalysis } from '@/types/incident';
 
 const sources = ['EMAIL', 'WHATSAPP', 'PHONE', 'HELPDESK', 'SOC_ALERT', 'USER_REPORT', 'SYSTEM_ALERT', 'SCREENSHOT', 'OTHER'];
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
@@ -67,12 +68,11 @@ export default function IntakeForm() {
   const [savedId, setSavedId] = useState<string | null>(null);
   const [busy, setBusy] = useState<'analyze' | 'save' | null>(null);
   const [error, setError] = useState('');
+  const previewsRef = useRef<string[]>([]);
 
   useEffect(() => {
-    const urls = files.map((file) => URL.createObjectURL(file));
-    setPreviews(urls);
-    return () => urls.forEach((url) => URL.revokeObjectURL(url));
-  }, [files]);
+    return () => previewsRef.current.forEach((url) => URL.revokeObjectURL(url));
+  }, []);
 
   function addFiles(selected: FileList | null) {
     if (!selected) return;
@@ -81,6 +81,10 @@ export default function IntakeForm() {
     const invalid = next.find((file) => !acceptedTypes.has(file.type) || file.size > MAX_FILE_SIZE || !/\.(png|jpe?g|webp)$/i.test(file.name));
     if (invalid) return setError('Screenshots must be PNG, JPG, JPEG, or WEBP files no larger than 5 MB each.');
     setError('');
+    previewsRef.current.forEach((url) => URL.revokeObjectURL(url));
+    const urls = next.map((file) => URL.createObjectURL(file));
+    previewsRef.current = urls;
+    setPreviews(urls);
     setFiles(next);
   }
 
@@ -130,7 +134,7 @@ export default function IntakeForm() {
         <form onSubmit={handleAnalyze} className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
           <div className="space-y-5">
             <Panel title="Incident report"><label htmlFor="report" className="text-sm font-medium text-white">Paste the original report</label><p className="mt-1 text-xs leading-5 text-slate-400">Keep the wording as received. Include messages, URLs, IPs, filenames, and other evidence.</p><textarea id="report" value={report} onChange={(event) => setReport(event.target.value)} rows={14} maxLength={10000} className="mt-4 w-full resize-y border border-slate-700 bg-slate-950 p-3 text-sm leading-6 text-white outline-none placeholder:text-slate-600 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400" placeholder="Example: I received an email asking me to verify my portal password..." /><p className="mt-2 text-right text-xs text-slate-500">{report.length}/10,000</p></Panel>
-            <Panel title="Screenshot evidence"><label htmlFor="evidence" className="flex min-h-32 cursor-pointer flex-col items-center justify-center border border-dashed border-slate-600 bg-slate-950 p-5 text-center hover:border-cyan-400"><span className="text-sm font-medium text-white">Choose screenshots</span><span className="mt-1 text-xs text-slate-400">PNG, JPG, JPEG, or WEBP · up to 5 MB each</span><input id="evidence" type="file" accept="image/png,image/jpeg,image/webp" multiple onChange={(event) => addFiles(event.target.files)} className="sr-only" /></label>{files.length > 0 && <div className="mt-4 grid grid-cols-3 gap-3">{files.map((file, index) => <div key={file.name} className="relative border border-slate-800 bg-slate-950 p-2"><img src={previews[index]} alt={`Selected evidence ${index + 1}`} className="aspect-square w-full object-cover" /><button type="button" onClick={() => setFiles(files.filter((_, itemIndex) => itemIndex !== index))} className="mt-2 w-full text-xs text-red-300 hover:text-red-200">Remove</button></div>)}</div>}</Panel>
+            <Panel title="Screenshot evidence"><label htmlFor="evidence" className="flex min-h-32 cursor-pointer flex-col items-center justify-center border border-dashed border-slate-600 bg-slate-950 p-5 text-center hover:border-cyan-400"><span className="text-sm font-medium text-white">Choose screenshots</span><span className="mt-1 text-xs text-slate-400">PNG, JPG, JPEG, or WEBP · up to 5 MB each</span><input id="evidence" type="file" accept="image/png,image/jpeg,image/webp" multiple onChange={(event) => addFiles(event.target.files)} className="sr-only" /></label>{files.length > 0 && <div className="mt-4 grid grid-cols-3 gap-3">{files.map((file, index) => <div key={file.name} className="relative border border-slate-800 bg-slate-950 p-2"><Image src={previews[index]} alt={`Selected evidence ${index + 1}`} width={240} height={240} unoptimized className="aspect-square w-full object-cover" /><button type="button" onClick={() => { URL.revokeObjectURL(previews[index]); const nextFiles = files.filter((_, itemIndex) => itemIndex !== index); const nextPreviews = previews.filter((_, itemIndex) => itemIndex !== index); previewsRef.current = nextPreviews; setFiles(nextFiles); setPreviews(nextPreviews); }} className="mt-2 w-full text-xs text-red-300 hover:text-red-200">Remove</button></div>)}</div>}</Panel>
           </div>
 
           <div className="space-y-5">

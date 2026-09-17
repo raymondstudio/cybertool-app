@@ -39,7 +39,11 @@ function getClient(): GoogleGenAI | null {
   return new GoogleGenAI({ apiKey });
 }
 
-async function callGemini(prompt: string, maxTokens = 512): Promise<string | null> {
+async function callGemini(
+  prompt: string,
+  maxTokens = 512,
+  responseSchema?: typeof CLASSIFICATION_RESPONSE_SCHEMA
+): Promise<string | null> {
   const genAI = getClient();
   if (!genAI) return null;
 
@@ -50,6 +54,7 @@ async function callGemini(prompt: string, maxTokens = 512): Promise<string | nul
         contents: prompt,
         config: {
           maxOutputTokens: maxTokens,
+          ...(responseSchema ? { responseMimeType: 'application/json', responseSchema } : {}),
         },
       }),
       new Promise<never>((_, reject) =>
@@ -268,7 +273,7 @@ function parseAiClassification(raw: string): ClassificationResult | null {
 }
 
 export async function classifyWithAi(report: string): Promise<AiClassificationResult> {
-  const rawResponse = await callGemini(CLASSIFY_PROMPT(report), 256);
+  const rawResponse = await callGemini(CLASSIFY_PROMPT(report), 256, CLASSIFICATION_RESPONSE_SCHEMA);
 
   if (!rawResponse) {
     return { classification: null, usedFallback: true };

@@ -31,7 +31,6 @@ import { findRelatedIncidents } from './similarity';
 import { classifyWithAi, generateSummary } from '../ai/provider';
 import { incidentStore } from '../data/store';
 import {
-  IncidentType,
   IncidentSeverity,
   IncidentStatus,
   IncidentInputSource,
@@ -119,10 +118,7 @@ export async function analyzeIncident(
   // We run AI classification concurrently with severity calculation
   const aiClassificationPromise = classifyWithAi(normalized.normalized);
 
-  // Stage 5: Calculate severity using deterministic result (before AI returns)
-  const severity = calculateSeverity(normalized.normalized, deterministicClassification);
-
-  // Stage 6: AI summary generation (start concurrently)
+  // Stage 5: AI summary generation (start concurrently)
   const summaryPromise = generateSummary(normalized.normalized, deterministicClassification.type);
 
   // Await AI classification and merge with deterministic result

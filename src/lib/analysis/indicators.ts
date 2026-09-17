@@ -110,7 +110,7 @@ function extractUrls(text: string): ExtractedIndicator[] {
   const re = new RegExp(PATTERNS.URL.source, 'gi');
 
   while ((match = re.exec(text)) !== null) {
-    let url = match[0].replace(/[.,;:!?'")]+$/, ''); // strip trailing punctuation
+    const url = match[0].replace(/[.,;:!?'")]+$/, ''); // strip trailing punctuation
     results.push({
       type: IndicatorType.URL,
       value: url,
@@ -148,8 +148,6 @@ function extractIpv4(text: string, urlMatches: string[]): ExtractedIndicator[] {
   const re = new RegExp(PATTERNS.IPV4.source, 'g');
 
   // Build set of URL ranges to exclude IPs already captured as part of URLs
-  const urlSet = new Set(urlMatches.map((u) => u.toLowerCase()));
-
   while ((match = re.exec(text)) !== null) {
     const ip = match[0];
     // Skip if this IP is already contained within a captured URL
