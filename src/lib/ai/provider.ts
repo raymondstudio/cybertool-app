@@ -8,10 +8,11 @@
  *   - Schema-validated responses
  */
 
+import { GoogleGenAI, Type } from '@google/genai';
 import { IncidentType } from '@/types/incident';
 import type { ClassificationResult } from '../analysis/types';
 
-// ─── Interface ────────────────────────────────────────────────────────────────
+const DEFAULT_MODEL = process.env.GEMINI_MODEL ?? 'gemini-2.5-flash';
 
 export interface AiSummaryResult {
   summary: string;
@@ -23,39 +24,70 @@ export interface AiClassificationResult {
   usedFallback: boolean;
 }
 
-// ─── Gemini client ────────────────────────────────────────────────────────────
-
 function getApiKey(): string | null {
-  return process.env.GOOGLE_GENERATIVE_AI_API_KEY ?? null;
+  return process.env.GEMINI_API_KEY ?? process.env.GOOGLE_GENERATIVE_AI_API_KEY ?? null;
+}
+
+function getClient(): GoogleGenAI | null {
+  const apiKey = getApiKey();
+  if (!apiKey) return null;
+  return new GoogleGenAI({ apiKey });
 }
 
 async function callGemini(prompt: string, maxTokens = 512): Promise<string | null> {
-  const apiKey = getApiKey();
-  if (!apiKey) return null;
+  const genAI = getClient();
+  if (!genAI) return null;
 
   try {
-    const { GoogleGenerativeAI } = await import('@google/generative-ai');
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-
     const result = await Promise.race([
-      model.generateContent(prompt),
+      genAI.models.generateContent({
+        model: DEFAULT_MODEL,
+        contents: prompt,
+        config: {
+          maxOutputTokens: maxTokens,
+        },
+      }),
       new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error('Gemini timeout')), 8000)
       ),
     ]);
 
-    // TypeScript needs the cast since Promise.race doesn't narrow well here
-    const res = result as Awaited<ReturnType<typeof model.generateContent>>;
-    return res.response.text();
+    if (!result || typeof result !== 'object') return null;
+
+    const record = result as unknown as Record<string, unknown>;
+    if (typeof record.text === 'string' && record.text.trim()) {
+      return record.text.trim();
+    }
+
+    const content = record.content;
+    if (content && typeof content === 'object') {
+      const nested = content as Record<string, unknown>;
+      if (Array.isArray(nested.parts)) {
+        const text = nested.parts
+          .map((part) => {
+            if (!part || typeof part !== 'object') return '';
+            const value = (part as { text?: string }).text;
+            return typeof value === 'string' ? value : '';
+          })
+          .join('')
+          .trim();
+
+        if (text) return text;
+      }
+    }
+
+    if (Array.isArray(record.candidates)) {
+      const candidate = record.candidates[0] as Record<string, unknown>;
+      const candidateText = typeof candidate.text === 'string' ? candidate.text : '';
+      if (candidateText.trim()) return candidateText.trim();
+    }
+
+    return null;
   } catch (err) {
-    // Log without exposing API key or report content
     console.error('[AI] Gemini call failed:', err instanceof Error ? err.message : 'Unknown error');
     return null;
   }
 }
-
-// ─── Summary generation ───────────────────────────────────────────────────────
 
 const SUMMARY_PROMPT = (report: string, incidentType: string) => `
 You are a cybersecurity analyst. Given the raw incident report below, write a concise 2-3 sentence summary suitable for a security operations center.
@@ -76,7 +108,6 @@ ${report.substring(0, 2000)}
 Summary:`.trim();
 
 function buildFallbackSummary(report: string, incidentType: string): string {
-  // Extract first 2 sentences from the report as a rough summary
   const sentences = report
     .replace(/\n+/g, ' ')
     .split(/(?<=[.!?])\s+/)
@@ -103,7 +134,6 @@ export async function generateSummary(
     };
   }
 
-  // Basic validation — summary should not be empty or too long
   const trimmed = aiText.trim();
   if (trimmed.length > 1000) {
     return {
@@ -114,8 +144,6 @@ export async function generateSummary(
 
   return { summary: trimmed, usedFallback: false };
 }
-
-// ─── AI-enhanced classification ───────────────────────────────────────────────
 
 const INCIDENT_TYPES = Object.values(IncidentType).join(', ');
 
@@ -141,15 +169,26 @@ interface RawAiClassification {
   evidence?: unknown;
 }
 
+const CLASSIFICATION_RESPONSE_SCHEMA = {
+  type: Type.OBJECT,
+  properties: {
+    type: { type: Type.STRING },
+    confidence: { type: Type.NUMBER },
+    evidence: {
+      type: Type.ARRAY,
+      items: { type: Type.STRING },
+    },
+  },
+  required: ['type', 'confidence', 'evidence'],
+} as const;
+
 function parseAiClassification(raw: string): ClassificationResult | null {
   try {
-    // Extract JSON from response (AI sometimes adds extra text)
-    const jsonMatch = raw.match(/\{[^{}]+\}/s);
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
     if (!jsonMatch) return null;
 
     const parsed: RawAiClassification = JSON.parse(jsonMatch[0]);
 
-    // Validate type
     const validTypes = Object.values(IncidentType) as string[];
     if (
       !parsed.type ||
@@ -159,13 +198,11 @@ function parseAiClassification(raw: string): ClassificationResult | null {
       return null;
     }
 
-    // Validate confidence
     const confidence =
       typeof parsed.confidence === 'number'
         ? Math.min(1, Math.max(0, parsed.confidence))
         : 0.5;
 
-    // Validate evidence
     const evidence =
       Array.isArray(parsed.evidence) && parsed.evidence.every((e) => typeof e === 'string')
         ? (parsed.evidence as string[]).slice(0, 5)
