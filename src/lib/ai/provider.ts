@@ -58,7 +58,7 @@ async function callGemini(
         },
       }),
       new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('Gemini timeout')), 8000)
+        setTimeout(() => reject(new Error('Gemini timeout')), 30000)
       ),
     ]);
 
@@ -122,7 +122,7 @@ export async function analyzeImageEvidence(
       },
     }),
     new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error('Image analysis timed out')), 12000)
+      setTimeout(() => reject(new Error('Image analysis timed out')), 60000)
     ),
   ]);
 
