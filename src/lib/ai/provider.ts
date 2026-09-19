@@ -130,14 +130,19 @@ export async function analyzeImageEvidence(
   if (!text) throw new Error('The screenshot did not produce readable analysis.');
 
   try {
-    const parsed = JSON.parse(text) as { extractedText?: unknown; evidence?: unknown };
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error('No JSON object found in response');
+    }
+    const parsed = JSON.parse(jsonMatch[0]) as { extractedText?: unknown; evidence?: unknown };
     return {
       extractedText: typeof parsed.extractedText === 'string' ? parsed.extractedText.trim() : '',
       evidence: Array.isArray(parsed.evidence)
         ? parsed.evidence.filter((item): item is string => typeof item === 'string').slice(0, 8)
         : [],
     };
-  } catch {
+  } catch (err) {
+    console.error('Image analysis parse error:', err, 'Raw text:', text);
     throw new Error('The screenshot analysis returned an invalid result.');
   }
 }
