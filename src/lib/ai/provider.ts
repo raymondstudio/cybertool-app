@@ -117,7 +117,7 @@ export async function analyzeImageEvidence(
         { inlineData: image },
       ],
       config: {
-        maxOutputTokens: 1200,
+        maxOutputTokens: 4096,
         responseMimeType: 'application/json',
       },
     }),
@@ -143,7 +143,10 @@ export async function analyzeImageEvidence(
     };
   } catch (err) {
     console.error('Image analysis parse error:', err, 'Raw text:', text);
-    throw new Error('The screenshot analysis returned an invalid result.');
+    return {
+      extractedText: text.length > 50 ? text.substring(0, 1000) + '... [JSON Parse Failed]' : 'Could not extract text from the screenshot.',
+      evidence: ['Analysis was generated but could not be parsed as structured data.'],
+    };
   }
 }
 
